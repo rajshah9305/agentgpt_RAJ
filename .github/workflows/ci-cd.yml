@@ -45,7 +45,7 @@ jobs:
       run: |
         cd backend
         timeout 30s python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
-        sleep 10
+        bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8000/health)" != "200" ]]; do sleep 1; done' || exit 1
         curl -f http://localhost:8000/health || exit 1
         curl -f http://localhost:8000/ || exit 1
         curl -f http://localhost:8000/providers || exit 1
@@ -98,7 +98,7 @@ jobs:
         cd backend
         docker build -t agentgpt-backend-test .
         docker run -d --name backend-test -p 8000:8000 agentgpt-backend-test
-        sleep 15
+        bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8000/health)" != "200" ]]; do sleep 1; done' || exit 1
         curl -f http://localhost:8000/health || exit 1
         docker stop backend-test
         docker rm backend-test

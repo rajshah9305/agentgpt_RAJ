@@ -190,11 +190,10 @@ class AIClient:
                 
             except httpx.HTTPError as e:
                 logger.error(f"HTTP error calling {self.provider.value}: {e}")
-                # Return a fallback response instead of raising an error
-                return f"AI provider temporarily unavailable. Error: {str(e)}"
+                raise HTTPException(status_code=502, detail=f"AI provider error: {str(e)}")
             except Exception as e:
                 logger.error(f"Unexpected error calling {self.provider.value}: {e}")
-                return f"Unexpected error occurred: {str(e)}"
+                raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
     async def execute_agent_task(self, goal: str, task_description: str, model: str, temperature: float = 0.7) -> str:
         """Execute a specific agent task using AI"""

@@ -296,13 +296,14 @@ function generateCSV(data: { agent: Agent; tasks: Task[]; logs: Log[]; options?:
   const { agent, tasks, logs, options } = data;
   let csv = '';
 
-  if (options?.includeConfig) {
+  // Default to including all data if options not provided
+  if (options === undefined || options.includeConfig) {
     csv += 'Agent Configuration\n';
     csv += 'Name,Goal,Provider,Model,Max Iterations,Temperature\n';
     csv += `${agent.name},${agent.goal},${agent.provider},${agent.model},${agent.maxIterations},${agent.temperature}\n\n`;
   }
 
-  if (options?.includeTasks) {
+  if (options === undefined || options.includeTasks) {
     csv += 'Tasks\n';
     csv += 'ID,Text,Status,Timestamp,Result\n';
     tasks.forEach(task => {
@@ -311,7 +312,7 @@ function generateCSV(data: { agent: Agent; tasks: Task[]; logs: Log[]; options?:
     csv += '\n';
   }
 
-  if (options?.includeLogs) {
+  if (options === undefined || options.includeLogs) {
     csv += 'Logs\n';
     csv += 'ID,Message,Type,Timestamp\n';
     logs.forEach(log => {
@@ -330,7 +331,8 @@ function generateTextReport(data: { agent: Agent; tasks: Task[]; logs: Log[]; op
   report += `AGENTGPT EXECUTION REPORT\n`;
   report += '='.repeat(60) + '\n\n';
 
-  if (options?.includeConfig) {
+  // Default to including all data if options not provided
+  if (options === undefined || options.includeConfig) {
     report += 'AGENT CONFIGURATION\n';
     report += '-'.repeat(30) + '\n';
     report += `Name: ${agent.name}\n`;
@@ -341,7 +343,7 @@ function generateTextReport(data: { agent: Agent; tasks: Task[]; logs: Log[]; op
     report += `Temperature: ${agent.temperature}\n\n`;
   }
 
-  if (options?.includeTasks) {
+  if (options === undefined || options.includeTasks) {
     report += 'TASK EXECUTION SUMMARY\n';
     report += '-'.repeat(30) + '\n';
     const completed = tasks.filter(t => t.status === 'completed').length;
@@ -364,7 +366,7 @@ function generateTextReport(data: { agent: Agent; tasks: Task[]; logs: Log[]; op
     });
   }
 
-  if (options?.includeLogs) {
+  if (options === undefined || options.includeLogs) {
     report += 'EXECUTION LOGS\n';
     report += '-'.repeat(30) + '\n';
     logs.forEach((log, index) => {

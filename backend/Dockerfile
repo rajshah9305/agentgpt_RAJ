@@ -9,22 +9,22 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements files for better caching
-# Try minimal requirements first, then ultra-safe, then render-specific, then main
-COPY requirements-minimal.txt requirements.txt
-COPY requirements-render-safe.txt requirements-render-safe.txt
+# Try render-specific first, then ultra-safe, then minimal, then main as fallback
 COPY requirements-render.txt requirements-render.txt
+COPY requirements-render-safe.txt requirements-render-safe.txt
+COPY requirements-minimal.txt requirements-minimal.txt
 COPY requirements.txt requirements-main.txt
 
 # Install Python dependencies with multiple fallbacks
-RUN if [ -f requirements.txt ]; then \
-        echo "Installing minimal requirements..." && \
-        pip install --no-cache-dir -r requirements.txt; \
+RUN if [ -f requirements-render.txt ]; then \
+        echo "Installing render-specific requirements..." && \
+        pip install --no-cache-dir -r requirements-render.txt; \
     elif [ -f requirements-render-safe.txt ]; then \
         echo "Installing ultra-safe requirements..." && \
         pip install --no-cache-dir -r requirements-render-safe.txt; \
-    elif [ -f requirements-render.txt ]; then \
-        echo "Installing render-specific requirements..." && \
-        pip install --no-cache-dir -r requirements-render.txt; \
+    elif [ -f requirements-minimal.txt ]; then \
+        echo "Installing minimal requirements..." && \
+        pip install --no-cache-dir -r requirements-minimal.txt; \
     else \
         echo "Installing main requirements..." && \
         pip install --no-cache-dir -r requirements-main.txt; \
