@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AgentConfiguration } from '@/components/AgentConfiguration';
 import { AgentDashboard } from '@/components/AgentDashboard';
 import { useAgentStore } from '@/lib/stores/agentStore';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<'config' | 'dashboard'>('config');
@@ -27,11 +28,13 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {currentView === 'config' ? (
-          <AgentConfiguration onDeploy={handleDeploy} />
-        ) : (
-          <AgentDashboard onBackToConfig={() => setCurrentView('config')} />
-        )}
+        <ErrorBoundary>
+          {currentView === 'config' ? (
+            <AgentConfiguration onDeploy={handleDeploy} />
+          ) : (
+            <AgentDashboard onBackToConfig={() => setCurrentView('config')} />
+          )}
+        </ErrorBoundary>
       </main>
     </div>
   );

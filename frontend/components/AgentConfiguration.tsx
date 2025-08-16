@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAgentStore, Agent } from '@/lib/stores/agentStore';
 import { AI_PROVIDERS } from '@/lib/stores/agentStore';
 
@@ -9,16 +10,18 @@ interface AgentConfigurationProps {
 
 export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
   const { agent, setAgent, saveAgent, savedAgents, loadAgent } = useAgentStore();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof typeof agent, value: string | number) => {
-    setAgent({ [field]: value });
+  const handleInputChange = (field: keyof Agent, value: string | number) => {
+    setAgent({ [field]: value } as Partial<Agent>);
   };
 
   const handleProviderChange = (provider: 'cerebras' | 'sambanova') => {
     setAgent({ 
       provider, 
       model: AI_PROVIDERS[provider].models[0].id 
-    });
+    } as Partial<Agent>);
   };
 
   const handleSave = () => {
@@ -27,6 +30,43 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
 
   const handleLoad = (savedAgent: Agent) => {
     loadAgent(savedAgent);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!agent.name.trim()) {
+      newErrors.name = 'Agent name is required';
+    }
+    
+    if (!agent.goal.trim()) {
+      newErrors.goal = 'Goal is required';
+    }
+    
+    if (!agent.apiKey.trim()) {
+      newErrors.apiKey = 'API key is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleDeploy = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      onDeploy();
+    } catch (error) {
+      console.error('Deployment failed:', error);
+      setErrors({ submit: 'Deployment failed. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDownloadConfig = () => {
@@ -83,9 +123,14 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
                 value={agent.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="e.g., Research Assistant, Code Reviewer"
-                className="input-field group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300"
+                className={`input-field group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300 ${
+                  errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
                 required
               />
+              {errors.name && (
+                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
 
             <div className="group">
@@ -96,9 +141,14 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
                 value={agent.goal}
                 onChange={(e) => handleInputChange('goal', e.target.value)}
                 placeholder="Describe what you want the agent to accomplish..."
-                className="input-field min-h-[120px] resize-none group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300"
+                className={`input-field min-h-[120px] resize-none group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300 ${
+                  errors.goal ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
                 required
               />
+              {errors.goal && (
+                <p className="text-red-500 text-sm mt-1">{errors.goal}</p>
+              )}
             </div>
           </div>
 
@@ -123,19 +173,27 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
 
             <div className="group">
               <label className="block text-gray-700 text-sm font-semibold mb-2 group-hover:text-blue-600 transition-colors duration-200">
-                Model *
+                Model * 
+                <span className="ml-2 text-xs text-gray-500 font-normal">
+                  (Speed: Fast = Quick responses, Medium = Balanced, Slow = Most accurate)
+                </span>
               </label>
               <select
                 value={agent.model}
                 onChange={(e) => handleInputChange('model', e.target.value)}
                 className="input-field group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300"
               >
-                {AI_PROVIDERS[agent.provider as keyof typeof AI_PROVIDERS].models.map((model) => (
+                {AI_PROVIDERS[agent.provider]?.models?.map((model) => (
                   <option key={model.id} value={model.id}>
-                    {model.name} - {model.speed}
+                    {model.name} ({model.speed})
                   </option>
-                ))}
+                )) || []}
               </select>
+              {AI_PROVIDERS[agent.provider]?.models?.find(m => m.id === agent.model) && (
+                <p className="text-gray-500 text-sm mt-2">
+                  {AI_PROVIDERS[agent.provider].models.find(m => m.id === agent.model)?.description}
+                </p>
+              )}
             </div>
 
             <div className="group">
@@ -147,9 +205,14 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
                 value={agent.apiKey}
                 onChange={(e) => handleInputChange('apiKey', e.target.value)}
                 placeholder="Enter your API key"
-                className="input-field group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300"
+                className={`input-field group-hover:border-blue-400 group-hover:shadow-md transition-all duration-300 ${
+                  errors.apiKey ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
                 required
               />
+              {errors.apiKey && (
+                <p className="text-red-500 text-sm mt-1">{errors.apiKey}</p>
+              )}
             </div>
           </div>
         </div>
@@ -203,12 +266,12 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button
-          onClick={onDeploy}
-          disabled={!agent.name || !agent.goal || !agent.apiKey}
+          onClick={handleDeploy}
+          disabled={!agent.name || !agent.goal || !agent.apiKey || isSubmitting}
           className="btn-primary text-lg px-12 py-4 disabled:opacity-50 disabled:cursor-not-allowed hover-glow"
         >
-          <span className="mr-3 text-2xl">🚀</span>
-          Deploy Agent
+          <span className="mr-3 text-2xl">{isSubmitting ? '⏳' : '🚀'}</span>
+          {isSubmitting ? 'Deploying...' : 'Deploy Agent'}
         </button>
         
         <button
@@ -244,8 +307,17 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
                 </p>
                 <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full group-hover:bg-blue-200 transition-colors duration-200">{savedAgent.provider}</span>
-                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full group-hover:bg-purple-200 transition-colors duration-200">{savedAgent.model}</span>
+                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full group-hover:bg-purple-200 transition-colors duration-200">
+                    {AI_PROVIDERS[savedAgent.provider]?.models?.find(m => m.id === savedAgent.model)?.name || savedAgent.model}
+                  </span>
                 </div>
+                {AI_PROVIDERS[savedAgent.provider]?.models?.find(m => m.id === savedAgent.model) && (
+                  <div className="text-xs text-gray-500 mb-3">
+                    Speed: <span className="font-medium">
+                      {AI_PROVIDERS[savedAgent.provider].models.find(m => m.id === savedAgent.model)?.speed}
+                    </span>
+                  </div>
+                )}
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleLoad(savedAgent)}
@@ -254,7 +326,25 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
                     Load
                   </button>
                   <button
-                    onClick={() => handleDownloadConfig()}
+                    onClick={() => {
+                      const configData = {
+                        ...savedAgent,
+                        exportTimestamp: new Date().toISOString(),
+                        version: '1.0.0'
+                      };
+                      
+                      const blob = new Blob([JSON.stringify(configData, null, 2)], { 
+                        type: 'application/json' 
+                      });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${savedAgent.name.replace(/\s+/g, '_')}_config_${new Date().toISOString().slice(0, 10)}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    }}
                     className="btn-secondary text-sm px-4 py-2 flex-1 hover-glow"
                   >
                     Download
@@ -265,6 +355,31 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
           </div>
         </div>
       )}
+
+      {/* Model Comparison Guide */}
+      <div className="card hover-lift">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+          <span className="mr-3 text-3xl">📊</span>
+          Model Comparison Guide
+        </h3>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h4 className="font-semibold text-blue-900 mb-2">How to Choose Your Model:</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="bg-green-100 p-3 rounded-lg">
+              <div className="font-medium text-green-800 mb-1">🚀 Fast Models</div>
+              <div className="text-green-700">Quick responses, good for real-time applications and simple tasks</div>
+            </div>
+            <div className="bg-yellow-100 p-3 rounded-lg">
+              <div className="font-medium text-yellow-800 mb-1">⚖️ Medium Models</div>
+              <div className="text-yellow-700">Balanced performance, recommended for most use cases</div>
+            </div>
+            <div className="bg-red-100 p-3 rounded-lg">
+              <div className="font-medium text-red-800 mb-1">🎯 Slow Models</div>
+              <div className="text-red-700">Highest accuracy, best for research and critical analysis</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Provider Information */}
       <div className="card hover-lift">
@@ -277,13 +392,21 @@ export function AgentConfiguration({ onDeploy }: AgentConfigurationProps) {
             <div key={key} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg">
               <h4 className="font-semibold text-gray-900 mb-4 text-lg">{provider.name}</h4>
               <div className="space-y-4">
-                {provider.models.map((model) => (
+                {provider.models?.map((model) => (
                   <div key={model.id} className="bg-white rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-md hover:scale-105">
-                    <div className="font-medium text-gray-900 mb-1">{model.name}</div>
-                    <div className="text-blue-600 text-sm font-medium mb-1">{model.speed}</div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-gray-900">{model.name}</div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        model.speed === 'Fast' ? 'bg-green-100 text-green-800' :
+                        model.speed === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {model.speed}
+                      </span>
+                    </div>
                     <div className="text-gray-600 text-sm">{model.description}</div>
                   </div>
-                ))}
+                )) || []}
               </div>
             </div>
           ))}

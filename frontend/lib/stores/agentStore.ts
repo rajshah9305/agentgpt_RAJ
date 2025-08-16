@@ -64,6 +64,12 @@ export const AI_PROVIDERS: Record<string, AIProvider> = {
         name: 'Cerebras-2',
         speed: 'Medium',
         description: 'Balanced model for general AI tasks'
+      },
+      {
+        id: 'cerebras-3',
+        name: 'Cerebras-3',
+        speed: 'Slow',
+        description: 'Most accurate model for research and analysis'
       }
     ]
   },
@@ -81,6 +87,12 @@ export const AI_PROVIDERS: Record<string, AIProvider> = {
         name: 'Sambanova-2',
         speed: 'Medium',
         description: 'Versatile model for various AI applications'
+      },
+      {
+        id: 'sambanova-3',
+        name: 'Sambanova-3',
+        speed: 'Slow',
+        description: 'Highest accuracy model for critical applications'
       }
     ]
   }
@@ -117,7 +129,7 @@ const defaultAgent: Agent = {
   name: '',
   goal: '',
   provider: 'cerebras',
-  model: 'cerebras-1',
+  model: 'cerebras-2', // Use medium speed as default for better balance
   apiKey: '',
   maxIterations: 5,
   temperature: 0.7

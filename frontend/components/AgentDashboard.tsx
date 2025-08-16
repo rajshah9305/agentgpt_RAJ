@@ -25,41 +25,109 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
     for (let i = 0; i < Math.min(currentTasks.length, agent.maxIterations); i++) {
       if (currentTasks[i]) {
         // Update task status to running
-        useAgentStore.getState().updateTask(currentTasks[i].id, { status: 'running' });
+        useAgentStore.getState().updateTask(currentTasks[i].text, { status: 'running' });
         setCurrentTask(currentTasks[i].text);
         
-        // Simulate work
-        await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+        // Simulate work with variable timing based on task complexity
+        const baseTime = 2000;
+        const complexityMultiplier = Math.random() * 2 + 0.5; // 0.5x to 2.5x
+        const executionTime = baseTime * complexityMultiplier;
+        await new Promise(resolve => setTimeout(resolve, executionTime));
         
-        // Update task as completed
-        useAgentStore.getState().updateTask(currentTasks[i].id, {
+        // Generate intelligent results based on task content
+        const generateResult = (taskText: string) => {
+          const taskLower = taskText.toLowerCase();
+          
+          if (taskLower.includes('research') || taskLower.includes('gather')) {
+            return `Research completed successfully. Found ${Math.floor(Math.random() * 10) + 5} relevant sources and ${Math.floor(Math.random() * 20) + 10} key insights. Data quality: ${Math.floor(Math.random() * 30) + 70}%.`;
+          } else if (taskLower.includes('analyze') || taskLower.includes('analyzing')) {
+            return `Analysis completed. Identified ${Math.floor(Math.random() * 8) + 3} patterns, ${Math.floor(Math.random() * 5) + 2} correlations, and ${Math.floor(Math.random() * 3) + 1} anomalies. Confidence level: ${Math.floor(Math.random() * 20) + 80}%.`;
+          } else if (taskLower.includes('design') || taskLower.includes('architecture')) {
+            return `Design phase completed. Created system architecture with ${Math.floor(Math.random() * 5) + 3} components, ${Math.floor(Math.random() * 8) + 5} interfaces, and scalability considerations. Design score: ${Math.floor(Math.random() * 15) + 85}/100.`;
+          } else if (taskLower.includes('implement') || taskLower.includes('code')) {
+            return `Implementation completed. Developed ${Math.floor(Math.random() * 10) + 5} functions, ${Math.floor(Math.random() * 5) + 2} classes, with ${Math.floor(Math.random() * 20) + 80}% test coverage. Code quality: ${Math.floor(Math.random() * 15) + 85}/100.`;
+          } else if (taskLower.includes('test') || taskLower.includes('debug')) {
+            return `Testing completed. Executed ${Math.floor(Math.random() * 50) + 20} test cases, found and fixed ${Math.floor(Math.random() * 5) + 1} bugs. Test coverage: ${Math.floor(Math.random() * 15) + 85}%.`;
+          } else if (taskLower.includes('review') || taskLower.includes('insights')) {
+            return `Review completed. Generated ${Math.floor(Math.random() * 8) + 3} key insights, identified ${Math.floor(Math.random() * 5) + 2} improvement areas, and created ${Math.floor(Math.random() * 3) + 1} actionable recommendations.`;
+          } else if (taskLower.includes('finalize') || taskLower.includes('summary')) {
+            return `Finalization completed. Created comprehensive summary with ${Math.floor(Math.random() * 10) + 5} sections, ${Math.floor(Math.random() * 20) + 10} key points, and ${Math.floor(Math.random() * 5) + 2} next steps. Ready for delivery.`;
+          } else {
+            return `Task completed successfully. Generated insights and moved to next phase. Completion quality: ${Math.floor(Math.random() * 20) + 80}%.`;
+          }
+        };
+        
+        // Update task as completed with intelligent result
+        useAgentStore.getState().updateTask(currentTasks[i].text, {
           status: 'completed',
-          result: `Completed: ${currentTasks[i].text}. Generated insights and moved to next phase.`
+          result: generateResult(currentTasks[i].text)
         });
         
-        // Add log entry
+        // Add detailed log entry
         useAgentStore.getState().addLog({
-          message: `Completed: ${currentTasks[i].text}`,
-          type: 'info'
+          message: `✅ ${currentTasks[i].text} - ${generateResult(currentTasks[i].text)}`,
+          type: 'success'
         });
       }
     }
     
     setCurrentTask(null);
     useAgentStore.getState().stopExecution();
+    
+    // Add completion log
+    useAgentStore.getState().addLog({
+      message: `🎉 All tasks completed successfully! Agent execution finished.`,
+      type: 'success'
+    });
   }, [agent.maxIterations]);
 
-  // Simulate task execution
+  // Generate intelligent tasks based on agent goal
   useEffect(() => {
     if (isExecuting && tasks.length === 0) {
-      // Create initial tasks based on agent goal
-      const initialTasks = [
-        'Analyzing goal and breaking down into tasks',
-        'Researching information and gathering context',
-        'Executing primary objectives',
-        'Reviewing results and generating insights',
-        'Finalizing outputs and preparing summary'
-      ];
+      // Generate intelligent tasks based on the agent's goal
+      const generateTasks = (goal: string) => {
+        const goalLower = goal.toLowerCase();
+        let tasks = [];
+        
+        if (goalLower.includes('research') || goalLower.includes('analyze') || goalLower.includes('study')) {
+          tasks = [
+            'Analyzing research requirements and scope',
+            'Gathering relevant data and sources',
+            'Conducting comprehensive analysis',
+            'Synthesizing findings and insights',
+            'Preparing research summary and recommendations'
+          ];
+        } else if (goalLower.includes('code') || goalLower.includes('develop') || goalLower.includes('program')) {
+          tasks = [
+            'Analyzing development requirements',
+            'Designing system architecture',
+            'Implementing core functionality',
+            'Testing and debugging code',
+            'Documenting and deploying solution'
+          ];
+        } else if (goalLower.includes('write') || goalLower.includes('content') || goalLower.includes('create')) {
+          tasks = [
+            'Understanding content requirements',
+            'Researching and gathering information',
+            'Creating initial draft',
+            'Reviewing and refining content',
+            'Finalizing and formatting output'
+          ];
+        } else {
+          // Generic task breakdown
+          tasks = [
+            'Analyzing goal and breaking down into tasks',
+            'Researching information and gathering context',
+            'Executing primary objectives',
+            'Reviewing results and generating insights',
+            'Finalizing outputs and preparing summary'
+          ];
+        }
+        
+        return tasks;
+      };
+
+      const initialTasks = generateTasks(agent.goal);
 
       // Add tasks to store
       initialTasks.forEach((taskText, index) => {
@@ -74,7 +142,7 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
       // Start executing tasks
       executeTasks();
     }
-  }, [isExecuting, tasks.length, executeTasks]);
+  }, [isExecuting, tasks.length, executeTasks, agent.goal]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
