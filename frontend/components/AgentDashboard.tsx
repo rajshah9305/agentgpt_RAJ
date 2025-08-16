@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAgentStore, Task, Log } from '@/lib/stores/agentStore';
 import { DownloadPanel } from './DownloadPanel';
 
@@ -14,8 +14,6 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
     isExecuting, 
     tasks, 
     logs, 
-    currentTaskIndex, 
-    clearLogs, 
     resetExecution 
   } = useAgentStore();
 
@@ -48,7 +46,7 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
     }
   }, [isExecuting, tasks.length]);
 
-  const executeTasks = async () => {
+  const executeTasks = useCallback(async () => {
     const currentTasks = useAgentStore.getState().tasks;
     
     for (let i = 0; i < Math.min(currentTasks.length, agent.maxIterations); i++) {
@@ -76,7 +74,7 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
     
     setCurrentTask(null);
     useAgentStore.getState().stopExecution();
-  };
+  }, [agent.maxIterations]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -111,7 +109,7 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">🤖 Agent Dashboard</h1>
-          <p className="text-gray-600">Monitor your AI agent's execution progress</p>
+          <p className="text-gray-600">Monitor your AI agent&apos;s execution progress</p>
         </div>
         <div className="flex space-x-4">
           <button
@@ -150,7 +148,7 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
             Task Execution
           </h3>
           <div className="space-y-5">
-            {tasks.map((task: Task, index: number) => (
+            {tasks.map((task: Task) => (
               <div 
                 key={task.id} 
                 className={`rounded-xl p-5 border-l-4 transition-all duration-300 ${getStatusColor(task.status)} hover:shadow-lg hover:scale-[1.02]`}

@@ -7,7 +7,7 @@ import { useAgentStore } from '@/lib/stores/agentStore';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<'config' | 'dashboard'>('config');
-  const { isExecuting, startExecution } = useAgentStore();
+  const { startExecution } = useAgentStore();
 
   const handleDeploy = () => {
     startExecution();

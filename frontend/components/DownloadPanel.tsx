@@ -5,7 +5,7 @@ import { useAgentStore, DownloadOptions, ExportFormat, Task } from '@/lib/stores
 import { ReportViewer } from './ReportViewer';
 
 export function DownloadPanel() {
-  const { downloadAgentData, downloadSimple, generateReport, agent, tasks, logs } = useAgentStore();
+  const { downloadAgentData, downloadSimple, tasks, logs } = useAgentStore();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showReportViewer, setShowReportViewer] = useState(false);
   const [downloadOptions, setDownloadOptions] = useState<DownloadOptions>({

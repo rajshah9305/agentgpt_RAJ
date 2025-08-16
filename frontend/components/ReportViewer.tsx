@@ -64,7 +64,7 @@ export function ReportViewer({ isOpen, onClose }: ReportViewerProps) {
               <div className="text-8xl mb-6 animate-bounce">📋</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Generate Your Report</h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Create a comprehensive execution report to analyze your agent's performance, 
+                Create a comprehensive execution report to analyze your agent&apos;s performance, 
                 view detailed task breakdowns, and get actionable insights.
               </p>
               <button

@@ -246,7 +246,7 @@ export const useAgentStore = create<AgentStore>()(
         let filename = '';
 
         if (options.format === 'json') {
-          const data: any = {};
+          const data: Record<string, unknown> = {};
           if (options.includeConfig) data.agent = agent;
           if (options.includeTasks) data.tasks = tasks;
           if (options.includeLogs) data.logs = logs;
