@@ -1,0 +1,19 @@
+# FastAPI and ASGI server
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+
+# HTTP client for AI API calls
+httpx==0.26.0
+
+# Data validation and serialization (pre-compiled wheels)
+pydantic==2.6.3
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Additional dependencies that might be needed
+typing-extensions==4.9.0
+annotated-types==0.6.0
+
+# CORS support
+starlette==0.36.3
