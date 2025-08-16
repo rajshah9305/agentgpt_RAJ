@@ -19,33 +19,6 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
 
   const [currentTask, setCurrentTask] = useState<string | null>(null);
 
-  // Simulate task execution
-  useEffect(() => {
-    if (isExecuting && tasks.length === 0) {
-      // Create initial tasks based on agent goal
-      const initialTasks = [
-        'Analyzing goal and breaking down into tasks',
-        'Researching information and gathering context',
-        'Executing primary objectives',
-        'Reviewing results and generating insights',
-        'Finalizing outputs and preparing summary'
-      ];
-
-      // Add tasks to store
-      initialTasks.forEach((taskText, index) => {
-        useAgentStore.getState().addTask({
-          id: `task-${Date.now()}-${index}`,
-          text: taskText,
-          status: 'pending',
-          timestamp: new Date().toISOString()
-        });
-      });
-
-      // Start executing tasks
-      executeTasks();
-    }
-  }, [isExecuting, tasks.length]);
-
   const executeTasks = useCallback(async () => {
     const currentTasks = useAgentStore.getState().tasks;
     
@@ -75,6 +48,33 @@ export function AgentDashboard({ onBackToConfig }: AgentDashboardProps) {
     setCurrentTask(null);
     useAgentStore.getState().stopExecution();
   }, [agent.maxIterations]);
+
+  // Simulate task execution
+  useEffect(() => {
+    if (isExecuting && tasks.length === 0) {
+      // Create initial tasks based on agent goal
+      const initialTasks = [
+        'Analyzing goal and breaking down into tasks',
+        'Researching information and gathering context',
+        'Executing primary objectives',
+        'Reviewing results and generating insights',
+        'Finalizing outputs and preparing summary'
+      ];
+
+      // Add tasks to store
+      initialTasks.forEach((taskText, index) => {
+        useAgentStore.getState().addTask({
+          id: `task-${Date.now()}-${index}`,
+          text: taskText,
+          status: 'pending',
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Start executing tasks
+      executeTasks();
+    }
+  }, [isExecuting, tasks.length, executeTasks]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
