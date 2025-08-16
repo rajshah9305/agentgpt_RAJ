@@ -30,7 +30,7 @@ jobs:
           echo "🔄 Pinging backend to keep it awake..."
           
           # Get the backend URL from secrets
-          BACKEND_URL="${BACKEND_URL:-https://agentgpt-backend.onrender.com}"
+          BACKEND_URL="${BACKEND_URL:-https://agentgpt-raj.onrender.com}"
           
           echo "📍 Pinging: $BACKEND_URL/health"
           
