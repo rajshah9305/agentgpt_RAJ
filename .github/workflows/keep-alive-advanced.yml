@@ -1,0 +1,73 @@
+name: Advanced Backend Keep-Alive
+on:
+  schedule:
+    - cron: '*/8 * * * *'  # Every 8 minutes (more aggressive)
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [ main, master ]  # Trigger on code pushes
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    name: Backend Health Check
+    strategy:
+      matrix:
+        endpoint: ['health', '', 'providers']  # Multiple endpoints to ping
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Ping Backend Endpoint
+        id: ping
+        run: |
+          echo "🔄 Pinging backend endpoint: /${{ matrix.endpoint }}"
+          
+          # Get backend URL from secrets or use default
+          BACKEND_URL="${BACKEND_URL:-https://your-backend-name.onrender.com}"
+          ENDPOINT="${{ matrix.endpoint }}"
+          
+          if [ -n "$ENDPOINT" ]; then
+            FULL_URL="$BACKEND_URL/$ENDPOINT"
+          else
+            FULL_URL="$BACKEND_URL"
+          fi
+          
+          echo "📍 URL: $FULL_URL"
+          
+          # Ping with timeout and retry
+          for i in {1..3}; do
+            echo "🔄 Attempt $i/3..."
+            
+            if curl -f -s --max-time 30 "$FULL_URL" > /dev/null; then
+              echo "✅ Success on attempt $i"
+              echo "status=success" >> $GITHUB_OUTPUT
+              break
+            else
+              echo "❌ Attempt $i failed"
+              if [ $i -eq 3 ]; then
+                echo "💥 All attempts failed"
+                echo "status=failed" >> $GITHUB_OUTPUT
+                exit 1
+              fi
+              sleep 5
+            fi
+          done
+          
+          echo "🕐 Completed at $(date)"
+        
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      
+      - name: Log Results
+        run: |
+          echo "🎯 Endpoint: /${{ matrix.endpoint }}"
+          echo "📊 Status: ${{ steps.ping.outputs.status }}"
+          echo "⏰ Next check in ~8 minutes"
+      
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "🚨 Backend health check failed for endpoint: /${{ matrix.endpoint }}"
+          echo "🔍 Please check your Render service"
+          echo "📧 Consider setting up notifications for critical failures"

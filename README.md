@@ -66,7 +66,7 @@ AgentGPT/
 
 ### DevOps & Deployment
 - **Docker** - Containerization
-- **GitHub Actions** - CI/CD pipeline
+- **GitHub Actions** - CI/CD pipeline and backend keep-alive
 - **Vercel** - Frontend deployment
 - **Railway/Render** - Backend deployment
 
@@ -98,6 +98,7 @@ This script will:
 - ✅ Set up Python virtual environment
 - ✅ Install all dependencies
 - ✅ Test the application
+- ✅ Set up GitHub Actions for backend keep-alive
 - ✅ Create production builds
 - ✅ Generate configuration files
 

@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // GitHub Pages configuration
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true, // Required for static export
+  },
+  
+  // Base path for GitHub Pages (update this to match your repo name)
+  basePath: process.env.NODE_ENV === 'production' ? '/agentgpt_RAJ-main' : '',
+  
   compress: true,
   poweredByHeader: false,
   generateEtags: false,

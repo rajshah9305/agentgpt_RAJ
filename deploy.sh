@@ -252,6 +252,144 @@ EOF
     print_success "Deployment files generated"
 }
 
+# Setup GitHub Actions for deployment and keep-alive
+setup_github_actions() {
+    print_status "Setting up GitHub Actions for backend keep-alive and frontend deployment..."
+    
+    # Create .github directory if it doesn't exist
+    if [ ! -d ".github" ]; then
+        mkdir -p .github/workflows
+        print_success "Created .github/workflows directory"
+    fi
+    
+    # Check if combined deployment workflow exists
+    if [ -f ".github/workflows/deploy-all.yml" ]; then
+        print_success "GitHub Actions deployment workflow already exists"
+    else
+        print_status "Creating GitHub Actions deployment workflow..."
+        cat > .github/workflows/deploy-all.yml << 'EOF'
+name: Deploy AgentGPT (Backend + Frontend)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: '*/10 * * * *'  # Keep backend awake every 10 minutes
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Keep Backend Awake (Runs on schedule)
+  keep-backend-alive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    name: Keep Render Backend Awake
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "🔄 Pinging backend to keep it awake..."
+          BACKEND_URL="${BACKEND_URL:-https://your-backend-name.onrender.com}"
+          echo "📍 Pinging: $BACKEND_URL/health"
+          if curl -f -s --max-time 30 "$BACKEND_URL/health" > /dev/null; then
+            echo "✅ Backend is awake and responding"
+          else
+            echo "⚠️  Backend ping failed - might be sleeping"
+            if curl -f -s --max-time 30 "$BACKEND_URL/" > /dev/null; then
+              echo "✅ Backend root endpoint is responding"
+            else
+              echo "❌ Backend appears to be down"
+              exit 1
+            fi
+          fi
+          echo "🕐 Ping completed at $(date)"
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      
+      - name: Log Success
+        if: success()
+        run: |
+          echo "🎉 Backend keep-alive ping successful"
+          echo "⏰ Next ping in ~10 minutes"
+      
+      - name: Log Failure
+        if: failure()
+        run: |
+          echo "💥 Backend keep-alive ping failed"
+          echo "🔍 Check your backend service on Render"
+
+  # Deploy Frontend to GitHub Pages (Runs on push/PR)
+  deploy-frontend:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    name: Deploy Frontend to GitHub Pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Build with Next.js
+        run: |
+          cd frontend
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_URL }}
+          NEXT_PUBLIC_APP_NAME: AgentGPT
+          NEXT_PUBLIC_APP_VERSION: 1.0.0
+          NODE_ENV: production
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/out
+
+  # Deploy to GitHub Pages
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: deploy-frontend
+    if: github.event_name != 'schedule'
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+EOF
+        print_success "Created GitHub Actions deployment workflow"
+    fi
+    
+    print_status "GitHub Actions setup completed"
+    print_warning "Remember to:"
+    print_warning "1. Add BACKEND_URL secret in your GitHub repository settings"
+    print_warning "2. Update the default URL in the workflow file"
+    print_warning "3. Enable GitHub Pages in your repository settings"
+    print_warning "4. Set GitHub Pages source to 'GitHub Actions'"
+}
+
 # Main execution
 main() {
     echo "🎯 AgentGPT Deployment Preparation"
@@ -264,6 +402,7 @@ main() {
     test_docker
     create_production_build
     generate_deployment_files
+    setup_github_actions
     
     echo ""
     echo "🎉 Deployment preparation completed successfully!"
@@ -273,9 +412,13 @@ main() {
     echo "2. Update frontend/.env.local with your production backend URL"
     echo "3. Test locally: docker-compose up"
     echo "4. Deploy to your chosen platform"
+    echo "5. Set up GitHub Actions secrets for backend keep-alive"
+    echo "6. Enable GitHub Pages in repository settings"
     echo ""
     echo "📚 For detailed deployment instructions, see DEPLOYMENT.md"
     echo "🐳 For local testing: docker-compose up"
+    echo "🔄 GitHub Actions will keep your Render backend awake every 10 minutes"
+    echo "🌐 Frontend will be deployed to GitHub Pages automatically"
 }
 
 # Run main function
